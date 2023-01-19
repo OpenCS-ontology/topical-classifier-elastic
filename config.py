@@ -2,10 +2,10 @@ from os import path
 
 
 
-
 ### paths ###
-ENV_PATH = path.join(r"C:\Users\User\anaconda3\envs\sdp_env")
-BASE_DIR = path.join(r"C:\Users\User\Desktop\SDP_project\opencs_paperclassification")
+
+ENV_PATH = path.join(r"C:\Users\golik\.conda\envs\opencs_paperclassification")
+BASE_DIR = path.join(r"C:\Users\golik\Desktop\mgr\semantic\project\opencs_paperclassification")
 ONTOLOGY_DIR = path.join(r"D:\OpenCS\OpenCS")
 
 DATA_DIR = path.join(BASE_DIR, "data")
