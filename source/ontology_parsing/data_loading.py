@@ -1,9 +1,7 @@
-from config import ONTOLOGY_CORE_DIR
 import glob
 from os import path
-from typing import List, Dict
+from typing import List
 from rdflib import Graph
-import rdflib
 
 
 

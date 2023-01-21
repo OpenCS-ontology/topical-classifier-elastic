@@ -7,6 +7,7 @@ from source.env_setup.setup import connect_elasticsearch
 from config import IDX_NAME
 
 
+
 def _find_n_best(result, n: int, label_colname: str):
     results = []
     for i in range(n):

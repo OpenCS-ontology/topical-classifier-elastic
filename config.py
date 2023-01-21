@@ -24,6 +24,8 @@ HAS_DISCIPLINE_URI = "http://purl.org/spar/fabio/hasDiscipline"
 OCS_URI = "https://w3id.org/ocs/ont/"
 PAPER_TYPE_URI = "https://makg.org/class/Paper"
 
+##############
+
 ### docker ###
 
 # docker images

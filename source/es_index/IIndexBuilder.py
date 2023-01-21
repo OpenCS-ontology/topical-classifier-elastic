@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict
-from rdflib import Graph
+
 
 
 class IIndexBuilder(ABC):

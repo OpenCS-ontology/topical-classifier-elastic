@@ -38,11 +38,11 @@ Change other config parameters if needed.
 
 7. Build a new index. You can see our notebook `loading_data_and_building_index.py` to see a demo.
 
-8. Make queries containing requested articles to get rankings of the OpenCS ontology concepts. Visit `querying_es.ipynb` for a demo.
+8. Make queries containing requested articles to get rankings of the OpenCS ontology concepts. Visit `querying_es.ipynb` for a demo of preparing queries, and the `process_files_batch.ipynb` for a demo of classifying a batch of articles (from files).
 
 ---
 
-### Configuration - `config.py` file
+## Configuration - `config.py` file
 
 This file defines some configuration values used in the project. Please adjust the values if needed.
 
@@ -53,6 +53,16 @@ This file defines some configuration values used in the project. Please adjust t
 - `DATA_DIR` - a path to the directory containing input files (with articles) in .ttl format.
 - `RESULT_DIR` - a path to the directory in which the results with rankings will be saved.
 - `ONTOLOGY_CORE_DIR` - a path to the directory containing the .ttl files with ontology concepts.
+- `INPUT_FILES_DIR` - a path to the directory with input files
+- `ORIGINAL_FILES_RESULT_DIR` - a path to the directory where updated (with a result concept) input files are saved 
+- `QUERY_RESULTS_DIR` - a path to the directory where query result (metadata, a whole ranking) is saved
+
+`URIs` section defines all assumed URIs in the project:
+- `TITLE_URI` - an URI of a predicate defining title in input files
+- `ABSTRACT_URI` - an URI of a predicate defining abstract in input files
+- `HAS_DISCIPLINE_URI` - an URI of a predicate defining discipline concept in input files
+- `OCS_URI`- an URI of the OpenCS ontology
+- `PAPER_TYPE_URI` - an uRI of the article entity type
 
 `docker` section defines Docker configuration. These constants can be ignored if Elastic Search is not build from our Docker solution.
 - `ES_IMAGE`, `KB_IMAGE` - Elastic Search and Kibana images. By default, we provided a baseline images. 
@@ -65,6 +75,14 @@ This file defines some configuration values used in the project. Please adjust t
 - `IDX_NAME` - name of the index. The name of the index does not need to be provided via configuration.
 Feel free to set a different name directly in code.
 
+---
+
+## Notebooks
+
+- `env_setup.ipynb` - this notebook demonstrates how to set-up Docker environment/dependencies and start/stop Docker containers.
+- `loading_data_and_building_index.ipynb` - this notebook shows how to load the OpenCS ontology and build an ES index. It assumes that ES host is available.
+- `querying_es.ipynb` - in this notebook we performed our **experiments** with the classification of articles. It also serves as a demo for preparing ES queries. It assumes that ES is responding and an index is already built.
+- `process_files_batch.ipynb` - in this notebook we showed how to use our solution to perform classification for a batch of input files (see Section `Sample input/output files`) for a given query. It assumes that ES is responding and an index is already built.
 ---
 
 ## Documentation
@@ -84,11 +102,16 @@ files = get_all_concept_file_paths(ONTOLOGY_CORE_DIR)
 
 # loading the files data into graphs with rdflib
 graphs = get_graphs_from_files(files)  
+
+# get a dictionary with all concepts and their preferred labels from the ontology
+labels_to_concepts_names = get_concepts_pref_labels(graphs)
 ```
 - `env_setup` provides tools for creating Docker containers and connecting with the Elastic Search host.
 ```python
 from config import IDX_NAME, PORT
 from source.env_setup.setup import connect_elasticsearch
+
+
 
 with connect_elasticsearch(es_config={'host': 'localhost', 'port': PORT}) as es:
     mappings = es.indices.get_mapping(index=IDX_NAME)
@@ -125,8 +148,6 @@ from source.ontology_parsing.graph_utils import get_uri_to_colname_dict_from_ont
 pred_uri_to_idx_colname = get_uri_to_colname_dict_from_ontology(graphs)
 ```
 
-**TO DO** TODO
-
 ### Querying the index
 
 The `./source/es_index/query_index.py` file defines a `find_n_best` function, that provides `n` best results (concept names with scores) for a given `query`. 
@@ -134,6 +155,8 @@ The `./source/es_index/query_index.py` file defines a `find_n_best` function, th
 ```python
 from source.es_index.query_index import find_n_best
 from config import PORT
+
+
 
 query = {'query': {
     "match": {"prefLabel" : a0['article_title']}
@@ -159,14 +182,42 @@ from source.result_saving.result_vocabulary import save_result_vocabulary
 save_result_vocabulary(query, res)
 ```
 
+and contains functions used for saving results of classification.
+The function `classify_input_files` is a function to query an ES index using a batch of files and the same query for all of them.
+It queries the index with a given `index_name` for each file from the `input_files_paths` list and retrieves a ranking of `n` best results with their scores.
+
+The results are saved in the `results` directory in two forms:
+- an original file with an object (that is **the best retrieved result** e.g., `ocs:C19`) of the `hasDiscipline` predicate updated in the `results/results` directory
+- a query result, a  `.ttl` file with a vocabulary containing data and the ranking retrieved from the query, in the `results/query_results` directory
+
+The input files are deleted (since their updated version is saved) by default. You can specify the `move_orignal` parameter as `False` to change this behavior.
+You can also set the `ask_to_override` parameters to `True` to make the function ask you whether to save the result after displaying it ([y/n]).
+
+It assumes that ES is running (if not start it, or see `env_setup.ipynb` for instructions) and an index is already constructed (see `loading_data_and_building_index.ipynb` for instructions).
+
+```python
+from source.data.input_data_reading import get_all_input_file_paths
+from config import INPUT_FILES_DIR, PORT, IDX_NAME
+from source.env_setup.setup import connect_elasticsearch 
+
+
+
+input_files_paths = get_all_input_file_paths(INPUT_FILES_DIR)
+...
+with connect_elasticsearch({'host': 'localhost', 'port': PORT}) as es:
+    classify_input_files(input_files_paths, labels_to_concepts_names, es, IDX_NAME, query, n=5)
+```
+
+
 ---
 
-## Sample input/output
-TO DO
+## Sample input/output files
 
+You can find exemplary input files in the `data/input_ttl_files` directory (e.g., `article0.ttl`).
 
----
-## Scripts
-TO DO
+You can find their result (output) files obtained from our classifier in the `results` directory:
+- `results/results`: original files with an updated object (that is **the best retrieved result** e.g., `ocs:C19`) of the `hasDiscipline` predicate
+- `results/query_results`: files with a vocabulary containing query metadata and the ranking retrieved from the query, in the `results/query_results` directory
+
 
 
