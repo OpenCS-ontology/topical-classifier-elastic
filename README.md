@@ -83,6 +83,7 @@ Feel free to set a different name directly in code.
 - `loading_data_and_building_index.ipynb` - this notebook shows how to load the OpenCS ontology and build an ES index. It assumes that ES host is available.
 - `querying_es.ipynb` - in this notebook we performed our **experiments** with the classification of articles. It also serves as a demo for preparing ES queries. It assumes that ES is responding and an index is already built.
 - `process_files_batch.ipynb` - in this notebook we showed how to use our solution to perform classification for a batch of input files (see Section `Sample input/output files`) for a given query. It assumes that ES is responding and an index is already built.
+- `experiments/other_indices.ipynb` and `experiments/other_indices.ipynb` - contain additional experiments with different types of indices.
 ---
 
 ## Documentation
