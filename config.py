@@ -9,10 +9,20 @@ BASE_DIR = path.join(r"C:\Users\golik\Desktop\mgr\semantic\project\opencs_paperc
 ONTOLOGY_DIR = path.join(r"D:\OpenCS\OpenCS")
 
 DATA_DIR = path.join(BASE_DIR, "data")
+INPUT_FILES_DIR = path.join(DATA_DIR, r"input_ttl_files/")
 RESULT_DIR = path.join(BASE_DIR, "results")
+ORIGINAL_FILES_RESULT_DIR = path.join(RESULT_DIR, "results")
+QUERY_RESULTS_DIR = path.join(RESULT_DIR, "query_results")
 ONTOLOGY_CORE_DIR = path.join(ONTOLOGY_DIR, r"ontology\core" )
 
 ##############
+
+### URIs ###
+TITLE_URI = "http://purl.org/dc/terms/title"
+ABSTRACT_URI = "http://purl.org/dc/terms/abstract"
+HAS_DISCIPLINE_URI = "http://purl.org/spar/fabio/hasDiscipline"
+OCS_URI = "https://w3id.org/ocs/ont/"
+PAPER_TYPE_URI = "https://makg.org/class/Paper"
 
 ### docker ###
 

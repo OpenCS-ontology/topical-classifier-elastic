@@ -1,14 +1,14 @@
-from rdflib import Graph, URIRef, Literal, BNode, TIME
+from rdflib import Graph, URIRef, Literal
 from rdflib.namespace import RDF, XSD
 import uuid
 import datetime
 from rdflib.namespace import Namespace
-from config import RESULT_DIR
+from config import QUERY_RESULTS_DIR
 from os import path
 
 
 
-def save_result_vocabulary(query, query_res, save_as_file=True):
+def save_result_vocabulary(query, query_res, original_file_name=None, save_as_file=True):
     schema = Namespace("http://schema.org/")
 
     res_uuid = str(uuid.uuid4())
@@ -31,7 +31,10 @@ def save_result_vocabulary(query, query_res, save_as_file=True):
     g.add((res, schema.endTime, end_time_literal))
 
     if save_as_file:
-        dest_path = path.join(RESULT_DIR, f"{res_uuid}.ttl")
+        file_name = f"{res_uuid}.ttl"
+        if original_file_name != None:
+            file_name = f"{original_file_name}_{file_name}"
+        dest_path = path.join(QUERY_RESULTS_DIR, file_name)
         g.serialize(dest_path, format="turtle")
 
     return str(g.serialize())

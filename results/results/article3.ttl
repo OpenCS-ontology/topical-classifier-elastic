@@ -1,0 +1,18 @@
+@prefix : <http://scrape.pl/> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix fabio: <http://purl.org/spar/fabio/> .
+@prefix ocs: <https://w3id.org/ocs/ont/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:paper a <https://makg.org/class/Paper> ;
+    dc:abstract "Background modelling is an empirical part in the procedure of foreground mining of idle and moving objects. The foreground object detection has become a challenging phenomenon due to intermittent objects, intensity variation, image artefact and dynamic background in the video analysis and video surveillance applications. In the video surveillances application, a large amount of data is getting processed by everyday basis. Thus it needs an efficient background modelling technique which could process those larger sets of data which promotes effective foreground detection. In this paper, we presented a renewed background modelling method for foreground segmentation. The main objective of the work is to perform the foreground extraction only in the intended region of interest using proposed Q-Tree algorithm. At most all the present techniques consider their updates to the pixels of the entire frame which may result in inefficient foreground detection with a quick update to slow moving objects. The proposed method contract these defect by extracting the foreground object by controlling the region of interest (the region only where the background subtraction is to be performed) and thereby reducing the false positive and false negative. The extensive experimental results and the evaluation parameters of the proposed approach with the state of art method were compared against the most recent background subtraction approaches. Moreover, we use challenge change detection dataset and the efficiency of our method is analyzed in different environmental conditions (indoor, outdoor) from the CDnet2014 dataset and additional real time videos. The experimental results were satisfactorily verified the strengths and weakness of proposed method against the existing state-of-the-art background modelling methods."^^xsd:string ;
+    dc:title "Background Modelling using a Q-Tree Based Foreground Segmentation"^^xsd:string ;
+    fabio:hasDiscipline ocs:C16603 ;
+    schema:datePublished "2014-01-01"^^xsd:date ;
+    schema:numberOfPages 8 ;
+    schema:url "drp/244.htmlhttp://dx.doi.org/10.15439/978-83-60810-58-3"^^xsd:anyURI .
+
+<https://makg.org/class/Paper> rdfs:label "Paper"@en .
+

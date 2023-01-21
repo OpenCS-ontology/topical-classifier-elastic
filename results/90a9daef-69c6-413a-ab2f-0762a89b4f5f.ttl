@@ -1,8 +1,0 @@
-@prefix schema: <http://schema.org/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
-<http://example.org/result/90a9daef-69c6-413a-ab2f-0762a89b4f5f> a schema:SearchAction ;
-    schema:endTime "2023-01-11"^^xsd:date ;
-    schema:query "{'query': {'multi_match': {'query': 'Brain Tumor Detection from MRI using Adaptive Thresholding and Histogram based Techniques', 'fields': ['prefLabel^3', 'related', 'broader']}}}" ;
-    schema:result "[{'prefLabel': ['Balanced histogram thresholding'], 'score': 43.706383}, {'prefLabel': ['Tumor detection'], 'score': 43.226555}, {'prefLabel': ['Brain tumor segmentation'], 'score': 42.221302}, {'prefLabel': ['Adaptive histogram equalization'], 'score': 36.658276}, {'prefLabel': ['Thresholding'], 'score': 33.2383}, {'prefLabel': ['Mri segmentation'], 'score': 32.949432}, {'prefLabel': ['Histogram'], 'score': 30.420723}, {'prefLabel': ['Blocking techniques'], 'score': 27.061342}, {'prefLabel': ['Recovery techniques'], 'score': 27.061342}, {'prefLabel': ['Visualisation techniques'], 'score': 27.061342}]" .
-

@@ -1,0 +1,18 @@
+@prefix : <http://scrape.pl/> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix fabio: <http://purl.org/spar/fabio/> .
+@prefix ocs: <https://w3id.org/ocs/ont/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:paper a <https://makg.org/class/Paper> ;
+    dc:abstract "This paper depicts a computerized framework that can distinguish brain tumor and investigate the diverse highlights of the tumor. Brain tumor segmentation means to isolated the unique tumor tissues, for example, active cells, edema and necrotic center from ordinary mind tissues of WM, GM, and CSF. However, manual segmentation in magnetic resonance data is a timeconsuming task. We present a method of automatic tumor segmentation in magnetic resonance images which consists of several steps. The recommended framework is helped by image processing based technique that gives improved precision rate of the cerebrum tumor location along with the computation of tumor measure. In this paper, the location of brain tumor from MRI is recognized utilizing adaptive thresholding with a level set and a morphological procedure with histogram. Automatic brain tumor stage is performed by using ensemble classification. Such phase classifies brain images into tumor and non-tumors using Feed Forwarded Artificial neural network based classifier. For test investigation, continuous MRI images gathered from 200 people are utilized. The rate of fruitful discovery through the proposed procedure is 97.32 percentage accurate."^^xsd:string ;
+    dc:title "Introduction to the Special Issue on Role of Scalable Computing and Data Analytics in Evolution of Internet of Things"^^xsd:string ;
+    fabio:hasDiscipline ocs:C34404 ;
+    schema:datePublished "2014-01-01"^^xsd:date ;
+    schema:numberOfPages 8 ;
+    schema:url "drp/244.htmlhttp://dx.doi.org/10.15439/978-83-60810-58-3"^^xsd:anyURI .
+
+<https://makg.org/class/Paper> rdfs:label "Paper"@en .
+
