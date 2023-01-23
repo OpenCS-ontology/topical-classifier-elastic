@@ -25,10 +25,10 @@ Authors: Paweł Golik | Przemysław Olender
 ## Setup
 1. Clone this repo to your desktop.
 
-2. Visit `config.py` to change the `BASE_PATH` constant - provide the absolute path to the `opencs_paperclassification` directory (e.g., `r"C:/Users/user/Desktop/opencs_paperclassification"`).
+2. Visit `config.py` to change the `BASE_PATH` constant - provide the absolute path to the `topical-classifier-elastic` directory (e.g., `r"C:/Users/user/Desktop/topical-classifier-elastic"`).
 Change other config parameters if needed.
 
-3. Create [**anaconda**](https://conda.io/projects/conda/en/latest/index.html) environment and install all dependencies (listed in the `environment.yml` file): Open Anaconda Prompt, then navigate to the `opencs_paperclassification` directory, and run `conda env create -f environment.yml --name <env_name>`.
+3. Create [**anaconda**](https://conda.io/projects/conda/en/latest/index.html) environment and install all dependencies (listed in the `environment.yml` file): Open Anaconda Prompt, then navigate to the `topical-classifier-elastic` directory, and run `conda env create -f environment.yml --name <env_name>`.
 
 4. If you have Elastic Search installed, you can move on to point number 5. If not, install Elastic Search on your computer or utilize our Docker containers providing a ready-to-use Elastic Search application. To learn more about setting up the environment for Elastic Search, please visit our `env_setup.ipynb` notebook for more details.
 
@@ -48,7 +48,7 @@ This file defines some configuration values used in the project. Please adjust t
 
 `paths` section defines absolute and relative paths.
 - `ENV_PATH` - an absolute path to the conda environment. Used when installing docker SDK in  `env_setup.ipynb`.
-- `BASE_DIR` - an absolute path to the `opencs_paperclassification` directory.
+- `BASE_DIR` - an absolute path to the `topical-classifier-elastic` directory.
 - `ONTOLOGY_DIR` - an absolute path to the `OpenCS` directory.
 - `DATA_DIR` - a path to the directory containing input files (with articles) in .ttl format.
 - `RESULT_DIR` - a path to the directory in which the results with rankings will be saved.
@@ -74,6 +74,61 @@ This file defines some configuration values used in the project. Please adjust t
 `Elastic Search index` section defines parameters regarding the ES index.
 - `IDX_NAME` - name of the index. The name of the index does not need to be provided via configuration.
 Feel free to set a different name directly in code.
+
+---
+
+## Scripts
+
+### `pipeline.py` - this script performs the whole pipeline of our project:
+- starts Docker containers
+- reads/parses the ontology
+- build a baseline index (all predicates from the ontology as columns)
+- perform classification for the files from the input directory (by default: `./data/input_tt_files`)
+- saves the results (**moves** updated files) in the output directory (by default: `./results/results`)
+- removes the deployed Docker containers
+
+How to run this script?
+
+1. Make sure that you already created a conda environment (see `Setup` section above).
+2. Adjust `BASE_DIR` and `ONTOLOGY_DIR` parameters in `config.py` (see `Configuration` section above).
+3. Navigate to the `topical-classifier-elastic` (base) directory.
+4. Open the `pipeline.py` file and make sure the query defined in the line 21 suits your expectations (you can see other exemplary queries in the `querying_es.ipynb` notebook).
+4. Run `python pipeline.py`.
+
+There are three possible parameters you can pass to the script:
+- `python pipeline.py --help` shows the available help
+- `--move_original_files` (`True`/`False`) determines whether the input files are deleted from the input directory after they are updated and moved to the result directory (by default `True`)
+- `--ask_to_override` (`True`/`False`) specifies whether to request a confirmation of results ([y/n]) before saving them from the user (note that if set to `True` you need to monitor the script and make a decision for each of the files after results are printed. By default `False`)
+- `--n` (`int`) indicates how many best results will be displayed for each article (by default `5`)
+
+A default query:
+```python
+query = {
+  "query": {
+    "dis_max": {
+      "queries": [
+        {
+          "multi_match" : {
+          "query":      "#ARTICLE_TITLE",  # PLACEHOLDER for an article title value 
+          "fields":     ["prefLabel^3", "related", "broader"],
+          "tie_breaker": 0.5
+         }
+        },
+        {
+          "multi_match" : {
+          "query":      "#ARTICLE_ABSTRACT", # PLACEHOLDER for an article abstract value
+          "type":       "most_fields",
+          "fields":     ["prefLabel^3", "related", "broader"],
+          "tie_breaker": 0.5
+         }
+        }
+      ]
+    }
+  }
+}
+
+```
+Note that for each input file (article) the placeholders `#ARTICLE_TITLE` and `#ARTICLE_ABSTRACT` will be replaced with the true values from the files.
 
 ---
 

@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 from nltk.corpus import stopwords
 import nltk
-nltk.download('stopwords')
+nltk.download('stopwords', quiet=True)
 from nltk.tokenize import word_tokenize
 from source.env_setup.setup import connect_elasticsearch
 from config import IDX_NAME
@@ -21,6 +21,9 @@ def _find_n_best(result, n: int, label_colname: str):
 
 def find_n_best(es: Elasticsearch, index_name: str, query: str, n: int, label_colname: str='prefLabel'):
     res = es.search(index=index_name, body=query)
+    if (res is None):
+        print("Empty result")
+        return
     return _find_n_best(res, n, label_colname)
 
 
