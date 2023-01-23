@@ -83,7 +83,7 @@ Feel free to set a different name directly in code.
 - starts Docker containers
 - reads/parses the ontology
 - build a baseline index (all predicates from the ontology as columns)
-- perform classification for the files from the input directory (by default: `./data/input_tt_files`)
+- perform classification for the files from the input directory (by default: `./data/input_ttl_files`)
 - saves the results (**moves** updated files) in the output directory (by default: `./results/results`)
 - removes the deployed Docker containers
 
