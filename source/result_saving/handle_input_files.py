@@ -60,14 +60,14 @@ def classify_input_files(
         #     continue
         # print("Saving the result and updating the discipline with the best result.")
 
-        # best_concept, _ = _get_best_concept_and_score(
-        #     query_result, labels_to_concept_names, label_colname
-        # )
-        # _override_and_move_input_file(
-        #     input_file_path, best_concept, move_original, file_format
-        # )
-        # save_result_vocabulary(_query, query_result, file_name)
-        # query_results.append(query_result)
+        best_concept, _ = _get_best_concept_and_score(
+            query_result, labels_to_concept_names, label_colname
+        )
+        _override_and_move_input_file(
+            input_file_path, best_concept, move_original, file_format
+        )
+        save_result_vocabulary(_query, query_result, file_name)
+        query_results.append(query_result)
 
     return query_results
 

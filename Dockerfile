@@ -3,6 +3,7 @@ FROM python:3.10.9-slim-bullseye
 WORKDIR /home
 RUN mkdir output
 RUN mkdir source
+RUN mkdir concepts_json
 COPY source source
 COPY config.py config.py
 COPY pipeline.py pipeline.py
