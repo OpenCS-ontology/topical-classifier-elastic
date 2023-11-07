@@ -129,7 +129,7 @@ def main(move_original_files, ask_to_override, n):
                         es,
                         IDX_NAME,
                         query,
-                        n=n,
+                        n=3,
                         move_original=True,
                         ask_to_override=False,
                     )
