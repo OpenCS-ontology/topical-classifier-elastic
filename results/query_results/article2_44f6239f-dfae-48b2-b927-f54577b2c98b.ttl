@@ -1,8 +1,0 @@
-@prefix schema: <http://schema.org/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
-<http://example.org/result/44f6239f-dfae-48b2-b927-f54577b2c98b> a schema:SearchAction ;
-    schema:endTime "2023-01-21"^^xsd:date ;
-    schema:query "{'query': {'dis_max': {'queries': [{'multi_match': {'query': 'An Ensemble Integrated Security System with Cross Breed Algorithm', 'type': 'most_fields', 'fields': ['prefLabel^3', 'related', 'broader'], 'tie_breaker': 0.5}}, {'multi_match': {'query': 'Blockchain and IoT are two technologies are most widely popular in present scenario, but technologies are more complicated. The blockchain used to transforms storage and data analysis. In recent years, the blockchain is at the heart of computer technologies. It is a cryptographically secure distributed database technology for storing and transmitting information. Various attacks are done in many networks. Many research articles discussed about the security issues over the IoT based secure using block chain technology. In this paper, an Ensemble Integrated Security System (EISS) is introduced to improve the security for the heterogeneous network which consists of normal and abnormal nodes which is processed with the block chain, IoT. Results show the performance of the OUATH-2 and EISS algorithm.', 'type': 'most_fields', 'fields': ['prefLabel^3', 'related', 'broader'], 'tie_breaker': 0.5}}]}}}" ;
-    schema:result "[{'prefLabel': ['Suicide and the Internet'], 'score': 237.78304}, {'prefLabel': ['Programming in the large and programming in the small'], 'score': 222.99342}, {'prefLabel': ['Model in the loop'], 'score': 214.80319}, {'prefLabel': ['Software in the loop'], 'score': 214.80319}, {'prefLabel': ['Computers in the classroom'], 'score': 209.08588}]" .
-
