@@ -1,4 +1,4 @@
-from rdflib import Graph, URIRef, BNode
+from rdflib import Graph, URIRef, BNode, Namespace
 import glob
 from os import path
 from typing import List
@@ -27,3 +27,10 @@ def extract_abstract_from_graph(graph: Graph, predicate_uri: str):
     abstract_node = list(graph.triples((None, description_uri, None)))[0][2]
     abstract = list(graph.triples((BNode(abstract_node), None, None)))[1][2]
     return abstract
+
+
+def extract_embedding_from_graph(graph: Graph):
+    bn = Namespace("https://w3id.org/ocs/ont/papers/")
+    graph.bind("", bn)
+    embedding = eval(str(list(graph.triples((None, bn.hasWordEmbedding, None)))[0][2]))
+    return embedding

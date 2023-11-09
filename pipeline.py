@@ -2,6 +2,7 @@ import requests
 import time
 import click
 import os
+import json
 
 # config
 from config import IDX_NAME, ES_PORT
@@ -20,32 +21,6 @@ from source.env_setup.setup import connect_elasticsearch
 
 from source.data.input_data_reading import get_all_input_file_paths
 from source.ontology_parsing.graph_utils import get_uri_to_colname_dict_from_ontology
-
-
-query = {
-    "query": {
-        "dis_max": {
-            "queries": [
-                {
-                    "multi_match": {
-                        "query": "#ARTICLE_TITLE",  # PLACEHOLDER for an article title value (the same query for all files)
-                        "type": "most_fields",
-                        "fields": ["prefLabel^3", "related", "broader"],
-                        "tie_breaker": 0.5,
-                    }
-                },
-                {
-                    "multi_match": {
-                        "query": "#ARTICLE_ABSTRACT",  # PLACEHOLDER for an article abstract value (the same query for all files)
-                        "type": "most_fields",
-                        "fields": ["prefLabel^3", "related", "broader"],
-                        "tie_breaker": 0.5,
-                    }
-                },
-            ]
-        }
-    }
-}
 
 
 # to make sure our ES host is responding before an attempt to create an index
@@ -82,20 +57,33 @@ def wait_for_localhost_to_response():
 )
 def main(move_original_files, ask_to_override, n):
     try:
-        print(f"Reading the OpenCS ontology files from: {ONTOLOGY_CORE_DIR}")
-        files = get_all_concept_file_paths(ONTOLOGY_CORE_DIR)
-        print(f"Parsing the ontology files")
-        # loading the files data into graphs with rdflib
-        graphs = get_graphs_from_files(files)
-
-        print(
-            "Creating the ES baseline index with all predicates from the ontology as columns."
-        )
         # creating a dictionary with concepts and their preferred labels
-        labels_to_concepts_names = get_concepts_pref_labels(graphs)
+        with open("/home/output_concepts_json", "r") as file:
+            labels_to_concepts_names = json.load(file)
 
         # getting all possible predicates from the ontology
-        pred_uri_to_idx_colname = get_uri_to_colname_dict_from_ontology(graphs)
+        pred_uri_to_idx_colname = {
+            "http://www.w3.org/2004/02/skos/core#closeMatch": "closeMatch",
+            "http://www.w3.org/2004/02/skos/core#related": "related",
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": "type",
+            "http://www.w3.org/2004/02/skos/core#broader": "broader",
+            "http://www.w3.org/2004/02/skos/core#prefLabel": "prefLabel",
+        }
+
+        mappings = {
+            "properties": {
+                "title": {"type": "text", "analyzer": "english"},
+                "ethnicity": {"type": "text", "analyzer": "standard"},
+                "director": {"type": "text", "analyzer": "standard"},
+                "cast": {"type": "text", "analyzer": "standard"},
+                "genre": {"type": "text", "analyzer": "standard"},
+                "plot": {"type": "text", "analyzer": "english"},
+                "year": {"type": "integer"},
+                "wiki_page": {"type": "keyword"},
+            }
+        }
+
+        es.indices.create(index="movies", mappings=mappings)
 
         # building a baseline index with all predicates from the ontology
         index_builder = IndexBaseline(
@@ -128,9 +116,8 @@ def main(move_original_files, ask_to_override, n):
                         labels_to_concepts_names,
                         es,
                         IDX_NAME,
-                        query,
-                        n=3,
-                        move_original=True,
+                        n=n,
+                        move_original=False,
                         ask_to_override=False,
                     )
 
