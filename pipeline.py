@@ -3,99 +3,92 @@ import time
 import click
 import os
 import json
+from rdflib import Graph, URIRef, BNode, Namespace
 
-# config
-from config import IDX_NAME, ES_PORT
-from config import ONTOLOGY_CORE_DIR
-
-from source.ontology_parsing.graph_utils import get_concepts_pref_labels
-from source.ontology_parsing.data_loading import (
-    get_all_concept_file_paths,
-    get_graphs_from_files,
-)
-
-from source.result_saving.handle_input_files import classify_input_files
-from source.es_index.create_index import build_index
-from source.es_index.IndexBaseline import IndexBaseline
-from source.env_setup.setup import connect_elasticsearch
-
-from source.data.input_data_reading import get_all_input_file_paths
-from source.ontology_parsing.graph_utils import get_uri_to_colname_dict_from_ontology
+from elasticsearch import Elasticsearch
 
 
-# to make sure our ES host is responding before an attempt to create an index
-def wait_for_localhost_to_response():
-    while True:
-        try:
-            requests.get(f"http://localhost:{ES_PORT}")
-            print("ES container is runnng")
-            return
-        except requests.exceptions.ConnectionError:
-            print(
-                f"The ES host (http://localhost:{ES_PORT}) is still not responding. Waiting..."
-            )
-            time.sleep(1)
+def extract_title_from_graph(graph: Graph):
+    pred_uri = URIRef("http://purl.org/dc/terms/title")
+    title_triple = list(graph.triples((None, pred_uri, None)))[0]
+    object_literal = str(title_triple[2])
+    return object_literal
 
 
-@click.command()
-@click.option(
-    "--move_original_files",
-    help="Should original input files be deleted from the input directory after classification.",
-    metavar="BOOL",
-    default=True,
-    show_default=True,
-)
-@click.option(
-    "--ask_to_override",
-    help="Ask to accept ([y/n]) the result before saving it.",
-    metavar="BOOL",
-    default=False,
-    show_default=True,
-)
-@click.option(
-    "--n", help="Print n best results.", metavar="INT", default=5, show_default=True
-)
-def main(move_original_files, ask_to_override, n):
-    try:
-        # creating a dictionary with concepts and their preferred labels
-        with open("/home/output_concepts_json", "r") as file:
-            labels_to_concepts_names = json.load(file)
+def extract_abstract_from_graph(graph: Graph):
+    description_uri = URIRef("http://purl.org/spar/datacite/hasDescription")
+    abstract_node = list(graph.triples((None, description_uri, None)))[0][2]
+    abstract = list(graph.triples((BNode(abstract_node), None, None)))[1][2]
+    return abstract
 
-        # getting all possible predicates from the ontology
-        pred_uri_to_idx_colname = {
-            "http://www.w3.org/2004/02/skos/core#closeMatch": "closeMatch",
-            "http://www.w3.org/2004/02/skos/core#related": "related",
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": "type",
-            "http://www.w3.org/2004/02/skos/core#broader": "broader",
-            "http://www.w3.org/2004/02/skos/core#prefLabel": "prefLabel",
-        }
 
-        mappings = {
-            "properties": {
-                "title": {"type": "text", "analyzer": "english"},
-                "ethnicity": {"type": "text", "analyzer": "standard"},
-                "director": {"type": "text", "analyzer": "standard"},
-                "cast": {"type": "text", "analyzer": "standard"},
-                "genre": {"type": "text", "analyzer": "standard"},
-                "plot": {"type": "text", "analyzer": "english"},
-                "year": {"type": "integer"},
-                "wiki_page": {"type": "keyword"},
+def extract_embedding_from_graph(graph: Graph):
+    bn = Namespace("https://w3id.org/ocs/ont/papers/")
+    graph.bind("", bn)
+    embedding = eval(str(list(graph.triples((None, bn.hasWordEmbedding, None)))[0][2]))
+    return embedding
+
+
+def get_query(title, abstract, embedding):
+    query = {
+        "query": {
+            "dis_max": {
+                "queries": [
+                    {
+                        "multi_match": {
+                            "query": title,
+                            "type": "most_fields",
+                            "analyzer": "standard",
+                            "fields": ["prefLabel^3", "related", "broader"],
+                            "tie_breaker": 0.5,
+                        }
+                    },
+                    {
+                        "multi_match": {
+                            "query": abstract,
+                            "type": "most_fields",
+                            "analyzer": "standard",
+                            "fields": ["prefLabel^3", "related", "broader"],
+                            "tie_breaker": 0.5,
+                        }
+                    },
+                ]
             }
         }
+    }
+    return query
 
-        es.indices.create(index="movies", mappings=mappings)
 
-        # building a baseline index with all predicates from the ontology
-        index_builder = IndexBaseline(
-            pred_uri_to_idx_colname, graphs, include_concept_type=True
-        )
-        wait_for_localhost_to_response()
+def main():
+    try:
+        index_name = "opencs_keywords_index"
 
-        build_index(
-            index_builder,
-            es_config={"host": "localhost", "port": int(ES_PORT), "scheme": "http"},
-            idx_name=IDX_NAME,
-        )
+        mappings = {
+            "mappings": {
+                "properties": {
+                    "prefLabel": {"type": "keyword"},
+                    "broader": {"type": "keyword"},
+                    "related": {"type": "keyword"},
+                    "embedding": {"type": "float"},
+                }
+            }
+        }
+        with Elasticsearch(
+            [{"host": "localhost", "port": 9200, "scheme": "http"}]
+        ) as es:
+            es.indices.create(index=index_name, body=mappings)
+
+        for file in os.listdir("/home/concepts.json"):
+            print(f"Indexing {file} file...")
+            concepts_batch = json.load(file)
+            for key, value in concepts_batch.items():
+                concept = {
+                    "prefLabel": value["prefLabel"],
+                    "related": value["related"],
+                    "broader": value["broader"],
+                    "embedding": value["embedding"],
+                }
+                es.index(index=index_name, id=key, body=concept)
 
         archives = ["csis", "scpe"]
         input_path = f"{os.getcwd()}/output"
@@ -103,25 +96,22 @@ def main(move_original_files, ask_to_override, n):
             root_dir = os.path.join(input_path, archive)
             for dir in os.listdir(root_dir):
                 dir_path = os.path.join(root_dir, dir)
-                print(
-                    f"Reading all input files with articles to be classified from: {dir_path}"
-                )
-                input_files_paths = get_all_input_file_paths(dir_path)
-
-                with connect_elasticsearch(
-                    {"host": "localhost", "port": ES_PORT, "scheme": "http"}
-                ) as es:
-                    classify_input_files(
-                        input_files_paths,
-                        labels_to_concepts_names,
-                        es,
-                        IDX_NAME,
-                        n=n,
-                        move_original=False,
-                        ask_to_override=False,
+                for ttl_file in os.listdir(dir_path):
+                    print(f"Finding best matching concepts for file {ttl_file}...")
+                    graph = Graph()
+                    graph.parse(ttl_file)
+                    file_title = extract_title_from_graph(graph)
+                    file_abstract = extract_abstract_from_graph(graph)
+                    file_abstract_embedding = extract_abstract_from_graph(graph)
+                    query = get_query(
+                        file_title, file_abstract, file_abstract_embedding
                     )
+                    results = es.search(index=index_name, body=query)
+                    for hit in results["hits"]["hits"]:
+                        print(hit["_score"])
+                        print(hit["_source"])
+                    break
 
-        print("End. Check the results dir.")
     except:
         raise
 
