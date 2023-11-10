@@ -59,27 +59,81 @@ def connect_elasticsearch(es_config):
     return _es
 
 
+def create_concept_json(concept_json_dir):
+    concepts = []
+    for file_path in os.listdir(concept_json_dir):
+        print(f"Indexing {file_path} file...")
+        with open(os.path.join(concept_json_dir, file_path), "r") as file:
+            concepts_batch = json.load(file)
+        for key, value in concepts_batch.items():
+            prefLabel = value.get("prefLabel", None)
+            broader = value.get("broader", None)
+            related = value.get("related", None)
+            embedding = value.get("embedding", None)
+            concept = {
+                "prefLabel": prefLabel if prefLabel else [],
+                "broader": broader if broader else [],
+                "related": related if related else [],
+                "embedding": embedding if embedding else [],
+            }
+            concepts.append(concept)
+    return concepts
+
+
 def get_query(title, abstract, embedding):
     query = {
         "query": {
-            "dis_max": {
-                "queries": [
+            "bool": {
+                "should": [
                     {
-                        "multi_match": {
-                            "query": title,
-                            "type": "most_fields",
-                            "analyzer": "standard",
-                            "fields": ["prefLabel^3", "related", "broader"],
-                            "tie_breaker": 0.5,
+                        "function_score": {
+                            "query": {
+                                "dis_max": {
+                                    "queries": [
+                                        {
+                                            "multi_match": {
+                                                "query": title,
+                                                "type": "most_fields",
+                                                "analyzer": "standard",
+                                                "fields": [
+                                                    "prefLabel^3",
+                                                    "related",
+                                                    "broader",
+                                                ],
+                                                "tie_breaker": 0.5,
+                                            }
+                                        },
+                                        {
+                                            "multi_match": {
+                                                "query": abstract,
+                                                "type": "most_fields",
+                                                "analyzer": "standard",
+                                                "fields": [
+                                                    "prefLabel^3",
+                                                    "related",
+                                                    "broader",
+                                                ],
+                                                "tie_breaker": 0.5,
+                                            }
+                                        },
+                                    ]
+                                }
+                            },
+                            "boost": 0.1,
                         }
                     },
                     {
-                        "multi_match": {
-                            "query": abstract,
-                            "type": "most_fields",
-                            "analyzer": "standard",
-                            "fields": ["prefLabel^3", "related", "broader"],
-                            "tie_breaker": 0.5,
+                        "function_score": {
+                            "query": {
+                                "script_score": {
+                                    "query": {"match_all": {}},
+                                    "script": {
+                                        "source": "cosineSimilarity(params.query_vector, 'embedding')*500",
+                                        "params": {"query_vector": embedding},
+                                    },
+                                }
+                            },
+                            "boost": 1,
                         }
                     },
                 ]
@@ -99,33 +153,23 @@ def main():
                     "prefLabel": {"type": "text"},
                     "broader": {"type": "text"},
                     "related": {"type": "text"},
-                    "embedding": {"type": "float"},
+                    "embedding": {
+                        "type": "dense_vector",
+                        "dims": 768,
+                    },
                 }
             }
         }
         with connect_elasticsearch(
             {"host": "localhost", "port": 9200, "scheme": "http"}
         ) as es:
+            es.indices.delete(index=index_name, ignore=[400, 404])
             print(f"Creating index {index_name}...")
             try:
                 es.indices.create(index=index_name, body=mappings)
                 print("Index created")
                 concept_json_dir = "/home/concepts_json"
-                concepts = []
-                for file_path in os.listdir(concept_json_dir):
-                    print(f"Indexing {file_path} file...")
-                    with open(os.path.join(concept_json_dir, file_path), "r") as file:
-                        concepts_batch = json.load(file)
-                    for key, value in concepts_batch.items():
-                        prefLabel = value.get("prefLabel", None)
-                        broader = value.get("broader", None)
-                        related = value.get("related", None)
-                        concept = {
-                            "prefLabel": prefLabel if prefLabel else [],
-                            "broader": broader if broader else [],
-                            "related": related if related else [],
-                        }
-                        concepts.append(concept)
+                concepts = create_concept_json(concept_json_dir)
                 store_records_bulk(es, index_name, concepts)
             except:
                 print(f"Index {index_name} already exists!")
@@ -141,7 +185,7 @@ def main():
                         graph.parse(os.path.join(dir_path, ttl_file))
                         file_title = extract_title_from_graph(graph)
                         file_abstract = extract_abstract_from_graph(graph)
-                        file_abstract_embedding = extract_abstract_from_graph(graph)
+                        file_abstract_embedding = extract_embedding_from_graph(graph)
                         query = get_query(
                             file_title, file_abstract, file_abstract_embedding
                         )
