@@ -1,7 +1,7 @@
 import time
 import os
 import json
-from rdflib import Graph, URIRef, BNode, Namespace
+from rdflib import Graph, URIRef, BNode, Namespace, Literal, XSD
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -75,6 +75,7 @@ def create_concept_json(concept_json_dir):
                 "broader": broader if broader else [],
                 "related": related if related else [],
                 "embedding": embedding if embedding else [],
+                "opencs_uid": key if key else [],
             }
             concepts.append(concept)
     return concepts
@@ -143,6 +144,25 @@ def get_query(title, abstract, embedding):
     return query
 
 
+def add_best_results_to_graph(best_results, file_graph):
+    ocs = Namespace("https://w3id.org/ocs/ont/")
+    fabio = Namespace("http://purl.org/spar/fabio/")
+    rdf = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+    base = Namespace("https://w3id.org/ocs/ont/papers/")
+    file_graph.bind("ocs", ocs)
+    paper_uid = file_graph.value(predicate=rdf.type, object=fabio.ResearchPaper)
+    for result in best_results:
+        bnode = BNode()
+        result_uid = result["opencs_uid"]
+        result_score = result["score"]
+        file_graph.add((paper_uid, base.hasRelatedTopics, bnode))
+        file_graph.add((bnode, base.hasOpencsUID, ocs[result_uid]))
+        file_graph.add(
+            (bnode, base.relationScore, Literal(result_score, datatype=XSD.integer))
+        )
+    return file_graph
+
+
 def main():
     try:
         index_name = "opencs_keywords_index"
@@ -157,13 +177,14 @@ def main():
                         "type": "dense_vector",
                         "dims": 768,
                     },
+                    "opencs_uid": {"type": "text"},
                 }
             }
         }
         with connect_elasticsearch(
             {"host": "localhost", "port": 9200, "scheme": "http"}
         ) as es:
-            es.indices.delete(index=index_name, ignore=[400, 404])
+            # es.indices.delete(index=index_name, ignore=[400, 404])
             print(f"Creating index {index_name}...")
             try:
                 es.indices.create(index=index_name, body=mappings)
@@ -180,9 +201,10 @@ def main():
                 for dir in os.listdir(root_dir):
                     dir_path = os.path.join(root_dir, dir)
                     for ttl_file in os.listdir(dir_path):
-                        print(f"Finding best matching concepts for file {ttl_file}...")
+                        print(f"Finding best matching concepts for file {ttl_file}")
                         graph = Graph()
-                        graph.parse(os.path.join(dir_path, ttl_file))
+                        ttl_full_path = os.path.join(dir_path, ttl_file)
+                        graph.parse(ttl_full_path)
                         file_title = extract_title_from_graph(graph)
                         file_abstract = extract_abstract_from_graph(graph)
                         file_abstract_embedding = extract_embedding_from_graph(graph)
@@ -190,7 +212,12 @@ def main():
                             file_title, file_abstract, file_abstract_embedding
                         )
                         results = es.search(index=index_name, body=query)
+                        best_three_results = find_n_best(results, 3, "opencs_uid")
                         print(find_n_best(results, 3, "prefLabel"))
+                        result_graph = add_best_results_to_graph(
+                            best_three_results, graph
+                        )
+                        result_graph.serialize(destination=ttl_full_path)
 
     except:
         raise
