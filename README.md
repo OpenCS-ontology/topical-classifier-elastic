@@ -1,15 +1,22 @@
-Topical paper classifier
-============
-Authors: Paweł Golik | Przemysław Olender
----
+# Topical classifier elastic
 
- The project was created during the Semantic Data Processing course at Warsaw University of Technology, Faculty of Mathematics and Information Science (2022/23 academic year).
+## Authors
 
----
+- [Tomasz Siudalski](https://github.com/tsiudalski)
+- [Grzegorz Zbrzeżny](https://github.com/grzegorzZ1)
+
+## Credits
+
+This project is based on the work of the following authors from the original project:
+
+- [Paweł Golik](https://github.com/Shaveek23)
+- [Przemysław Olender](https://github.com/przemekolender)
+
 
 ## About
 
- The project aims to implement a tool to assign the best matching concepts from the [OpenCS ontology](https://github.com/OpenCS-ontology/OpenCS) to given scientific articles based on their title and abstract. Although the name contains the word 'classifier,' the task is unsupervised, and our solution employs the `Elastic Search` search engine. The output for each article is a ranking of related concepts (with scorings).
+This component assigns the best matching concepts from the [OpenCS ontology](https://github.com/OpenCS-ontology/OpenCS) to given scientific articles based on their titles, abstracts, and embeddings. Although the name contains the word 'classifier,' the task is unsupervised, and the solution employs the `Elastic Search` search engine. This tool takes articles' turtle files as input and creates an Elastic Search index
+that encompasses both text and vector search to identify the most relevant concepts for each paper, facilitating the association of papers with pertinent ontology terms.
 
 ---
 
