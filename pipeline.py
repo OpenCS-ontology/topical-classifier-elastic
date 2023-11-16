@@ -2,6 +2,7 @@ import time
 import os
 import json
 from rdflib import Graph, URIRef, BNode, Namespace, Literal, XSD
+from kneed import KneeLocator
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -39,6 +40,7 @@ def store_records_bulk(es_object, index, data):
 
 
 def find_n_best(result, n, label_colname):
+    print(len(result["hits"]["hits"]))
     results = []
     for i in range(n):
         results.append(
@@ -212,10 +214,15 @@ def main():
                             file_title, file_abstract, file_abstract_embedding
                         )
                         results = es.search(index=index_name, body=query)
-                        best_three_results = find_n_best(results, 3, "opencs_uid")
-                        print(find_n_best(results, 3, "prefLabel"))
+                        n = 30
+                        best_n_results = find_n_best(results, n, "opencs_uid")
+                        x = [i for i in range(n)]
+                        y = [concept['score'] for concept in best_n_results]
+                        kl = KneeLocator(x, y, curve="convex", direction="decreasing", online=False)
+                        knee = kl.knee
+                        #print(find_n_best(results, n, "prefLabel"))
                         result_graph = add_best_results_to_graph(
-                            best_three_results, graph
+                            best_n_results[:knee], graph
                         )
                         result_graph.serialize(destination=ttl_full_path)
 
