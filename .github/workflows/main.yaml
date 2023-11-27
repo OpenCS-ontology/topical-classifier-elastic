@@ -24,18 +24,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      # - name: Wait for Elasticsearch to be ready
-      #   run: |
-      #     until curl -s -XGET http://localhost:9200/; do
-      #       echo 'Waiting for Elasticsearch to be available...'
-      #       sleep 5
       - name: Set up containers
         run: |
           docker build -t classifier_image .
           docker run -t -d --name classifier-container classifier_image
       - name: Check if container runs properly
         run: |
-          docker exec classifier-container bash /container_test/test_script.sh
+          docker exec classifier-container bash /home/container_test/test_script.sh
 
       - name: Clean up
         run: |
