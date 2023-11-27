@@ -19,6 +19,12 @@ jobs:
         run: |
           docker pull docker.elastic.co/elasticsearch/elasticsearch:7.12.1
           docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.12.1
+          
+          until curl -s -XGET http://localhost:9200/; do
+            echo 'Waiting for Elasticsearch to be available...'
+            sleep 5
+          done
+          
           docker build -t classifier_image .
           docker run -t -d --name classifier-container classifier_image
       - name: Check if container runs properly
