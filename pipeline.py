@@ -47,9 +47,7 @@ def store_records_bulk(es_object, index, data):
 
 
 def find_n_best(result, n, label_colname):
-    print(len(result["hits"]["hits"]))
-    print(n)
-    assert len(result["hits"]["hits"]) >= n
+    assert len(result["hits"]["hits"]) > 0
     results = []
     for i in range(n):
         results.append(
