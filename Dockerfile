@@ -4,5 +4,6 @@ WORKDIR /home
 RUN mkdir output
 RUN mkdir concepts_json
 COPY pipeline.py pipeline.py
+COPY container_test container_test
 COPY requirements.txt requirements.txt
 RUN pip3 install -r /home/requirements.txt

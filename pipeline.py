@@ -10,14 +10,18 @@ from elasticsearch.helpers import bulk
 
 def extract_title_from_graph(graph: Graph):
     pred_uri = URIRef("http://purl.org/dc/terms/title")
-    title_triple = list(graph.triples((None, pred_uri, None)))[0]
+    triples = graph.triples((None, pred_uri, None))
+    assert triples
+    title_triple = list(triples)[0]
     object_literal = str(title_triple[2])
     return object_literal
 
 
 def extract_abstract_from_graph(graph: Graph):
     description_uri = URIRef("http://purl.org/spar/datacite/hasDescription")
-    abstract_node = list(graph.triples((None, description_uri, None)))[0][2]
+    node = graph.triples((None, description_uri, None))
+    assert node
+    abstract_node = list(node)[0][2]
     abstract = list(graph.triples((BNode(abstract_node), None, None)))[1][2]
     return str(abstract)
 
@@ -25,7 +29,9 @@ def extract_abstract_from_graph(graph: Graph):
 def extract_embedding_from_graph(graph: Graph):
     bn = Namespace("https://w3id.org/ocs/ont/papers/")
     graph.bind("", bn)
-    embedding = eval(str(list(graph.triples((None, bn.hasWordEmbedding, None)))[0][2]))
+    _emb = graph.triples((None, bn.hasWordEmbedding, None))
+    assert _emb
+    embedding = eval(str(list(_emb)[0][2]))
     return embedding
 
 
@@ -36,11 +42,13 @@ def store_records_bulk(es_object, index, data):
         request["_op_type"] = "index"
         request["_index"] = index
         requests.append(request)
+    assert len(requests) > 0
     bulk(es_object, requests)
 
 
 def find_n_best(result, n, label_colname):
     print(len(result["hits"]["hits"]))
+    assert len(result["hits"]["hits"]) >= n
     results = []
     for i in range(n):
         results.append(
@@ -80,6 +88,7 @@ def create_concept_json(concept_json_dir):
                 "opencs_uid": key if key else [],
             }
             concepts.append(concept)
+    assert len(concepts) > 0
     return concepts
 
 
@@ -214,13 +223,15 @@ def main():
                             file_title, file_abstract, file_abstract_embedding
                         )
                         results = es.search(index=index_name, body=query)
+                        assert results
                         n = 30
                         best_n_results = find_n_best(results, n, "opencs_uid")
                         x = [i for i in range(n)]
-                        y = [concept['score'] for concept in best_n_results]
-                        kl = KneeLocator(x, y, curve="convex", direction="decreasing", online=False)
+                        y = [concept["score"] for concept in best_n_results]
+                        kl = KneeLocator(
+                            x, y, curve="convex", direction="decreasing", online=False
+                        )
                         knee = kl.knee
-                        #print(find_n_best(results, n, "prefLabel"))
                         result_graph = add_best_results_to_graph(
                             best_n_results[:knee], graph
                         )
