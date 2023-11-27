@@ -15,18 +15,10 @@ jobs:
     services:
           elasticsearch:
             image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
-            container_name: elasticsearch_container
-            environment:
-              - node.name=elasticsearch
-              - discovery.type=single-node
             ports:
-              - "9200:9200"
-              - "9300:9300"
-            ulimits:
-              memlock:
-                soft: -1
-                hard: -1
-            mem_limit: 2g
+              - 9200:9200
+              - 9300:9300
+            options: --health-cmd="curl -f http://localhost:9200/_cluster/health || false" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
       - name: Checkout code
