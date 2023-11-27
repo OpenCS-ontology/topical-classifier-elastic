@@ -11,7 +11,7 @@ env:
 
 jobs:
   container-test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ubuntu-latest]
     services:
           elasticsearch:
             image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
@@ -20,7 +20,6 @@ jobs:
               - 9300:9300
             options: --health-cmd="curl -f http://localhost:9200/_cluster/health || false" --health-cmd="nc -zv localhost 9300 || false" --health-interval=10s --health-timeout=5s --health-retries=3
             env:
-              node.name: elasticsearch
               discovery.type: single-node
     steps:
       - name: Checkout code
