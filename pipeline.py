@@ -63,9 +63,9 @@ def find_n_best(result, n, label_colname):
 def connect_elasticsearch(es_config):
     _es = None
     _es = Elasticsearch([es_config])
-    while not _es.ping():
-        print("Could not connect to Elastic Search, retrying in 3s...")
-        time.sleep(3)
+    # while not _es.ping():
+    #     print("Could not connect to Elastic Search, retrying in 3s...")
+    #     time.sleep(3)
     return _es
 
 
