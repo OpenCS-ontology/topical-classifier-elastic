@@ -195,7 +195,6 @@ def main():
         with connect_elasticsearch(
             {"host": "localhost", "port": 9200, "scheme": "http"}
         ) as es:
-            # es.indices.delete(index=index_name, ignore=[400, 404])
             print(f"Creating index {index_name}...")
             try:
                 es.indices.create(index=index_name, body=mappings)
