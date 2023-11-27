@@ -47,8 +47,6 @@ def store_records_bulk(es_object, index, data):
 
 
 def find_n_best(result, n, label_colname):
-    for i in range(len(result["hits"]["hits"])):
-        print(result["hits"]["hits"][i]["_source"][label_colname])
     assert len(result["hits"]["hits"]) >= n
     results = []
     for i in range(n):
@@ -95,6 +93,7 @@ def create_concept_json(concept_json_dir):
 
 def get_query(title, abstract, embedding):
     query = {
+        "size": 20,
         "query": {
             "bool": {
                 "should": [
@@ -151,7 +150,7 @@ def get_query(title, abstract, embedding):
                     },
                 ]
             }
-        }
+        },
     }
     return query
 
@@ -224,7 +223,7 @@ def main():
                         )
                         results = es.search(index=index_name, body=query)
                         assert results
-                        n = 30
+                        n = 20
                         best_n_results = find_n_best(results, n, "opencs_uid")
                         x = [i for i in range(n)]
                         y = [concept["score"] for concept in best_n_results]
