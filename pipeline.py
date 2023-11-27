@@ -47,7 +47,8 @@ def store_records_bulk(es_object, index, data):
 
 
 def find_n_best(result, n, label_colname):
-    print(result["hits"]["hits"])
+    for i in range(len(result["hits"]["hits"])):
+        print(result["hits"]["hits"][i]["_source"][label_colname])
     assert len(result["hits"]["hits"]) >= n
     results = []
     for i in range(n):
