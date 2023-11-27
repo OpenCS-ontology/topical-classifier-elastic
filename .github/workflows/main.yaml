@@ -18,12 +18,19 @@ jobs:
             ports:
               - 9200:9200
               - 9300:9300
-            options: --health-cmd="curl -f http://localhost:9200/_cluster/health || false" --health-interval=10s --health-timeout=5s --health-retries=3
+            options: --health-cmd="curl -f http://localhost:9200/_cluster/health || false" --health-cmd="nc -zv localhost 9300 || false" --health-interval=10s --health-timeout=5s --health-retries=3
             env:
+              node.name: elasticsearch
               discovery.type: single-node
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: Wait for Elasticsearch to be ready
+        run: |
+          until curl -s -XGET http://localhost:9200/; do
+            echo 'Waiting for Elasticsearch to be available...'
+            sleep 5
+          done
       - name: Set up containers
         run: |
           docker build -t classifier_image .
