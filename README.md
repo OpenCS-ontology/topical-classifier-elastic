@@ -1,5 +1,5 @@
 # Topical classifier elastic
-Description of this module is in [OpenCS wiki](https://github.com/OpenCS-ontology/OpenCS/wiki/KG-pipeline#topical-classifier)
+Description of this module is available in [OpenCS wiki](https://github.com/OpenCS-ontology/OpenCS/wiki/KG-pipeline#topical-classifier)
 
 ## Authors
 
