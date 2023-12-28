@@ -1,7 +1,8 @@
 import time
 import os
 import json
-from rdflib import Graph, URIRef, BNode, Namespace, Literal, XSD
+import re
+from rdflib import Graph, URIRef, BNode, Namespace, Literal, XSD, RDF
 from kneed import KneeLocator
 
 from elasticsearch import Elasticsearch
@@ -27,9 +28,9 @@ def extract_abstract_from_graph(graph: Graph):
 
 
 def extract_embedding_from_graph(graph: Graph):
-    bn = Namespace("https://w3id.org/ocs/ont/papers/")
-    graph.bind("", bn)
-    _emb = graph.triples((None, bn.hasWordEmbedding, None))
+    ocs_papers = Namespace("https://w3id.org/ocs/ont/papers/")
+    graph.bind("ocs_papers", ocs_papers)
+    _emb = graph.triples((None, ocs_papers.hasWordEmbedding, None))
     assert _emb
     embedding = eval(str(list(_emb)[0][2]))
     return embedding
@@ -156,21 +157,24 @@ def get_query(title, abstract, embedding):
 
 
 def add_best_results_to_graph(best_results, file_graph):
-    ocs = Namespace("https://w3id.org/ocs/ont/")
+    ocs_papers = Namespace("https://w3id.org/ocs/ont/papers/")
     fabio = Namespace("http://purl.org/spar/fabio/")
-    rdf = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-    base = Namespace("https://w3id.org/ocs/ont/papers/")
+    ocs = Namespace("https://w3id.org/ocs/ont/")
+    file_graph.bind("ocs_papers", ocs_papers)
+    file_graph.bind("fabio", fabio)
     file_graph.bind("ocs", ocs)
-    paper_uid = file_graph.value(predicate=rdf.type, object=fabio.ResearchPaper)
-    for result in best_results:
-        bnode = BNode()
+
+    paper_uid = file_graph.value(predicate=RDF.type, object=fabio.ResearchPaper)
+    id_ = re.search(r"[a-zA-Z0-9]{9}$", str(paper_uid)).group(0)
+    for i, result in enumerate(best_results):
         result_uid = result["opencs_uid"]
         result_score = result["score"]
-        file_graph.add((paper_uid, base.hasRelatedTopics, bnode))
-        file_graph.add((bnode, base.hasOpencsUID, ocs[result_uid]))
-        file_graph.add(
-            (bnode, base.relationScore, Literal(result_score, datatype=XSD.integer))
-        )
+        relation = URIRef(ocs_papers + "RelatedTopicRelation" + "_" + id_ + "_" + str(i))
+        file_graph.add((relation, RDF.type, ocs_papers.RelatedTopicRelation))
+        file_graph.add((relation, ocs_papers.hasRelationTarget, ocs[result_uid]))
+        file_graph.add((relation, ocs_papers.hasRelationScore, Literal(result_score, datatype=XSD.integer)))
+        file_graph.add((paper_uid, ocs_papers.hasRelatedTopic, relation))
+
     return file_graph
 
 
