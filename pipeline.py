@@ -235,6 +235,8 @@ def main():
                             x, y, curve="convex", direction="decreasing", online=False
                         )
                         knee = kl.knee
+                        if not knee:
+                            knee = len(best_n_results) - 1
                         result_graph = add_best_results_to_graph(
                             best_n_results[:knee], graph
                         )
