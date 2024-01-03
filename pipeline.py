@@ -91,8 +91,14 @@ def create_concept_json(concept_json_dir):
     assert len(concepts) > 0
     return concepts
 
+def get_first_500_words(text):
+    words = text.split()
+    first_500_words = ' '.join(words[:500])
+    return first_500_words
+
 
 def get_query(title, abstract, embedding):
+    abstract = get_first_500_words(abstract)
     query = {
         "size": 20,
         "query": {
